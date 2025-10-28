@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teleparty - Watch Together</title>
+  <style>
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #141414; color: white; }
+
+    /* Navbar */
+    .navbar { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.95);
+              display: flex; align-items: center; justify-content: space-between; padding: 0 30px; z-index: 100; }
+    .navbar .logo { font-weight: 700; font-size: 24px; letter-spacing: 1px; color: #e50914; }
+    .navbar .links a { margin-left: 20px; font-size: 14px; color: #fff; font-weight: 500; cursor: pointer; text-decoration: none; }
+    .navbar .links a:hover { color: #e50914; }
+    .navbar .user-profile { margin-left: 20px; width: 32px; height: 32px; border-radius: 4px; background: #e50914; cursor: pointer; }
+
+    /* Landing Page */
+    .landing { min-height: 100vh; padding-top: 60px; display: flex; align-items: center; justify-content: center; }
+    .landing-content { text-align: center; max-width: 800px; padding: 40px; }
+    .landing h1 { font-size: 48px; margin-bottom: 20px; font-weight: 700; }
+    .landing p { font-size: 18px; margin-bottom: 40px; color: #ccc; }
+    
+    .room-options { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; }
+    .room-card {
+      background: linear-gradient(145deg, #1c1c1c, #2a2a2a);
+      padding: 30px;
+      border-radius: 12px;
+      flex: 1;
+      min-width: 280px;
+      max-width: 350px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .room-card h3 { margin-bottom: 20px; font-size: 24px; color: #e50914; }
+    .room-card input { 
+      width: 100%; 
+      padding: 12px; 
+      margin-bottom: 15px; 
+      border-radius: 6px; 
+      border: 2px solid #333; 
+      background: #0a0a0a;
+      color: white;
+      font-size: 14px;
+    }
+    .room-card input:focus { outline: none; border-color: #e50914; }
+    .room-card button { 
+      padding: 14px 20px; 
+      font-size: 16px; 
+      font-weight: 700; 
+      border: none; 
+      border-radius: 6px; 
+      background: #e50914; 
+      color: white; 
+      cursor: pointer; 
+      transition: all 0.3s; 
+      width: 100%; 
+    }
+    .room-card button:hover { background: #f6121d; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(229,9,20,0.4); }
+
+    /* Party Room */
+    .party-room { display: none; padding-top: 60px; min-height: 100vh; }
+    .party-room.active { display: flex; }
+    
+    .video-container { flex: 1; padding: 20px; }
+    .video-wrapper { 
+      background: #000; 
+      border-radius: 8px; 
+      overflow: hidden; 
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    .video-wrapper video { width: 100%; display: block; }
+    
+    .video-controls { 
+      background: rgba(0,0,0,0.8); 
+      padding: 15px; 
+      display: flex; 
+      align-items: center; 
+      gap: 15px;
+    }
+    .video-controls button { 
+      background: #e50914; 
+      border: none; 
+      color: white; 
+      padding: 10px 20px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-weight: 600;
+    }
+    .video-controls button:hover { background: #f6121d; }
+    .video-controls .time { color: #ccc; font-size: 14px; }
+    .video-controls input[type="range"] { 
+      flex: 1; 
+      height: 6px; 
+      background: #333; 
+      outline: none; 
+      border-radius: 3px;
+    }
+
+    .room-info { 
+      background: #1c1c1c; 
+      padding: 15px 20px; 
+      margin: 20px; 
+      border-radius: 8px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+    }
+    .room-info .code { 
+      background: #e50914; 
+      padding: 8px 16px; 
+      border-radius: 4px; 
+      font-weight: 700; 
+      font-size: 18px;
+    }
+    .room-info .viewers { color: #ccc; }
+
+    /* Chat Sidebar */
+    .chat-sidebar { 
+      width: 350px; 
+      background: #1c1c1c; 
+      display: flex; 
+      flex-direction: column; 
+      border-left: 1px solid #333;
+    }
+    .chat-header { 
+      padding: 20px; 
+      border-bottom: 1px solid #333; 
+      font-weight: 700; 
+      font-size: 18px;
+    }
+    .chat-messages { 
+      flex: 1; 
+      padding: 20px; 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 15px;
+    }
+    .message { 
+      background: #2a2a2a; 
+      padding: 10px 15px; 
+      border-radius: 8px; 
+      animation: slideIn 0.3s;
+    }
+    .message.system { background: #1a1a2e; color: #4a9eff; border-left: 3px solid #4a9eff; }
+    .message .user { font-weight: 700; color: #e50914; margin-bottom: 5px; }
+    .message .text { color: #ccc; font-size: 14px; }
+    
+    .chat-input { 
+      padding: 20px; 
+      border-top: 1px solid #333; 
+      display: flex; 
+      gap: 10px;
+    }
+    .chat-input input { 
+      flex: 1; 
+      padding: 12px; 
+      border-radius: 6px; 
+      border: 2px solid #333; 
+      background: #0a0a0a; 
+      color: white;
+    }
+    .chat-input input:focus { outline: none; border-color: #e50914; }
+    .chat-input button { 
+      background: #e50914; 
+      border: none; 
+      color: white; 
+      padding: 12px 24px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-weight: 600;
+    }
+    .chat-input button:hover { background: #f6121d; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media(max-width: 768px) {
+      .party-room { flex-direction: column; }
+      .chat-sidebar { width: 100%; max-height: 400px; border-left: none; border-top: 1px solid #333; }
+      .landing h1 { font-size: 32px; }
+      .room-options { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="logo" onclick="window.location.href='home.html'">TELEPARTY</div>
+    <div class="links">
+      <a href="home.html">Home</a>
+      <a href="home.html">Leave Room</a>
+    </div>
+  </div>
+
+  <!-- Landing Page -->
+  <div class="landing" id="landing">
+    <div class="landing-content">
+      <h1>🎬 Watch Together, Anywhere</h1>
+      <p>Synchronize video playback and chat with friends in real-time</p>
+      
+      <div class="room-options">
+        <div class="room-card">
+          <h3>Create Room</h3>
+          <input type="text" id="createMovieName" placeholder="Movie/Show Name" value="Stranger Things">
+          <input type="text" id="createUserName" placeholder="Your Name" value="Host">
+          <button onclick="createRoom()">🎥 Create Party</button>
+        </div>
+
+        <div class="room-card">
+          <h3>Join Room</h3>
+          <input type="text" id="joinRoomCode" placeholder="Enter Room Code">
+          <input type="text" id="joinUserName" placeholder="Your Name">
+          <button onclick="joinRoom()">🚀 Join Party</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Party Room -->
+  <div class="party-room" id="partyRoom">
+    <div class="video-container">
+      <div class="room-info">
+        <div>
+          <strong id="movieTitle">Movie Title</strong>
+          <div class="viewers">👥 <span id="viewerCount">0</span> viewers</div>
+        </div>
+        <div class="code">Room: <span id="roomCode">XXXX</span></div>
+      </div>
+
+      <div class="video-wrapper">
+        <video id="video" poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%23000' width='1920' height='1080'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23fff' font-size='48' font-family='Arial'%3EVideo Player%3C/text%3E%3C/svg%3E">
+          <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+        </video>
+        
+        <div class="video-controls">
+          <button id="playPauseBtn" onclick="togglePlayPause()">▶️ Play</button>
+          <span class="time"><span id="currentTime">0:00</span> / <span id="duration">0:00</span></span>
+          <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1" onchange="seek()">
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-sidebar">
+      <div class="chat-header">💬 Party Chat</div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="handleChatEnter(event)">
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentRoom = null;
+    let currentUser = null;
+    let viewers = [];
+    let video = null;
+    let isSyncing = false;
+
+    function generateRoomCode() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function createRoom() {
+      const movieName = document.getElementById('createMovieName').value.trim();
+      const userName = document.getElementById('createUserName').value.trim();
+      
+      if (!movieName || !userName) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      currentRoom = {
+        code: generateRoomCode(),
+        movie: movieName,
+        host: userName
+      };
+      currentUser = userName;
+      viewers = [userName];
+      
+      startParty();
+    }
+
+    function joinRoom() {
+      const roomCode = document.getElementById('joinRoomCode').value.trim().toUpperCase();
+      const userName = document.getElementById('joinUserName').value.trim();
+      
+      if (!roomCode || !userName) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      currentRoom = {
+        code: roomCode,
+        movie: 'Stranger Things',
+        host: 'Host'
+      };
+      currentUser = userName;
+      viewers = ['Host', userName, 'Alice', 'Bob'];
+      
+      startParty();
+      addSystemMessage(`${userName} joined the party`);
+    }
+
+    function startParty() {
+      document.getElementById('landing').style.display = 'none';
+      document.getElementById('partyRoom').classList.add('active');
+      
+      document.getElementById('movieTitle').textContent = currentRoom.movie;
+      document.getElementById('roomCode').textContent = currentRoom.code;
+      document.getElementById('viewerCount').textContent = viewers.length;
+      
+      video = document.getElementById('video');
+      
+      video.addEventListener('loadedmetadata', () => {
+        document.getElementById('duration').textContent = formatTime(video.duration);
+      });
+      
+      video.addEventListener('timeupdate', updateProgress);
+      
+      addSystemMessage(`Welcome to ${currentRoom.movie} watch party!`);
+      addSystemMessage(`Share room code: ${currentRoom.code}`);
+      
+      // Simulate other viewers joining
+      setTimeout(() => {
+        if (viewers.length < 4) {
+          const newViewers = ['Emma', 'Chris', 'Sarah'];
+          newViewers.forEach((viewer, idx) => {
+            setTimeout(() => {
+              if (!viewers.includes(viewer)) {
+                viewers.push(viewer);
+                document.getElementById('viewerCount').textContent = viewers.length;
+                addSystemMessage(`${viewer} joined the party`);
+              }
+            }, (idx + 1) * 2000);
+          });
+        }
+      }, 3000);
+      
+      // Simulate chat messages
+      setTimeout(() => simulateChat(), 5000);
+    }
+
+    function togglePlayPause() {
+      if (video.paused) {
+        video.play();
+        document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
+        addSystemMessage(`${currentUser} started playback`);
+      } else {
+        video.pause();
+        document.getElementById('playPauseBtn').textContent = '▶️ Play';
+        addSystemMessage(`${currentUser} paused playback`);
+      }
+    }
+
+    function updateProgress() {
+      if (!isSyncing) {
+        const seekBar = document.getElementById('seekBar');
+        seekBar.value = (video.currentTime / video.duration) * 100;
+        document.getElementById('currentTime').textContent = formatTime(video.currentTime);
+      }
+    }
+
+    function seek() {
+      const seekBar = document.getElementById('seekBar');
+      isSyncing = true;
+      video.currentTime = (seekBar.value / 100) * video.duration;
+      setTimeout(() => { isSyncing = false; }, 100);
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      
+      if (message) {
+        addMessage(currentUser, message);
+        input.value = '';
+        
+        // Simulate responses
+        setTimeout(() => {
+          const responses = [
+            'I love this part!',
+            'This is so good 🔥',
+            'Can\'t wait to see what happens next',
+            'Anyone else excited?',
+            'This scene is amazing!'
+          ];
+          const randomViewer = viewers.filter(v => v !== currentUser)[Math.floor(Math.random() * (viewers.length - 1))];
+          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+          addMessage(randomViewer, randomResponse);
+        }, 2000 + Math.random() * 3000);
+      }
+    }
+
+    function handleChatEnter(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+
+    function addMessage(user, text) {
+      const messagesDiv = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message';
+      messageDiv.innerHTML = `<div class="user">${user}</div><div class="text">${text}</div>`;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function addSystemMessage(text) {
+      const messagesDiv = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message system';
+      messageDiv.innerHTML = `<div class="text">${text}</div>`;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function simulateChat() {
+      const messages = [
+        { user: 'Host', text: 'Thanks for joining everyone!' },
+        { user: 'Alice', text: 'So excited to watch this together!' },
+        { user: 'Bob', text: 'Let\'s do this! 🍿' }
+      ];
+      
+      messages.forEach((msg, idx) => {
+        setTimeout(() => {
+          if (viewers.includes(msg.user)) {
+            addMessage(msg.user, msg.text);
+          }
+        }, idx * 3000);
+      });
+    }
+
+    function leaveRoom() {
+      if (currentRoom && confirm('Are you sure you want to leave the party?')) {
+        goHome();
+      }
+    }
+
+    function goHome() {
+      document.getElementById('partyRoom').classList.remove('active');
+      document.getElementById('landing').style.display = 'flex';
+      
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+      
+      document.getElementById('chatMessages').innerHTML = '';
+      document.getElementById('playPauseBtn').textContent = '▶️ Play';
+      
+      currentRoom = null;
+      currentUser = null;
+      viewers = [];
+    }
+  </script>
+
+</body>
+</html>
